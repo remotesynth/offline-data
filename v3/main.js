@@ -4,20 +4,46 @@ const TODAY = new Date();
 const TODAYSTR = TODAY.getMonth()+1 + '/' + TODAY.getDate() + '/' + TODAY.getFullYear();
 
 function getStoreUpcoming() {
+  const upcomingStore = db.transaction(["UpcomingStoreItems"], "readwrite").objectStore("UpcomingStoreItems");
+  let getUpcomingStoreData = upcomingStore.getAll();
+  getUpcomingStoreData.onsuccess = function(event) {
+    let lastUpdated = new Date(event.target.result[0].requestDate);
+    let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
+
+    // if the data is a day or more old, and we are connected
+    if ((dayDiff >= 1) && (navigator.onLine))  {
+      loadUpcomingStoreData();
+    }
+    else {
+      CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
+      displayStoreData(event.target.result);
+    }
+  }
+}
+
+function loadUpcomingStoreData() {
   const request = new XMLHttpRequest();
-
-  document.getElementById('statsNav').classList.remove('active');
-  document.getElementById('storeNav').classList.remove('active');
-  document.getElementById('upcomingNav').classList.add('active');
-
   request.open('GET', APIROOT + '/upcoming/get', true);
   request.setRequestHeader('Authorization', FORTNITE_APIKEY);
 
   request.onload = function() {
     if (request.status >= 200 && request.status < 400) {
       const data = JSON.parse(request.responseText);
+      const upcomingStore = db.transaction(["UpcomingStoreItems"], "readwrite").objectStore("UpcomingStoreItems");
+
+      // delete the old items in the database
+      let clearUpcomingRequest = upcomingStore.clear();
+      clearUpcomingRequest.onsuccess = function(event) {
+        // store the new items in the database
+        let ds = TODAY.toDateString();
+        data.items.forEach(item => {
+          item.requestDate = ds;
+          upcomingStore.put(item);
+        });
+      }
+
       CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
-      displayStoreData(data);
+      displayStoreData(data.items);
     } else {
       console.log(request.statusText);
     }
@@ -31,11 +57,25 @@ function getStoreUpcoming() {
 }
 
 function getStore() {
-  const request = new XMLHttpRequest();
+  const dailyStore = db.transaction(["DailyStoreItems"], "readwrite").objectStore("DailyStoreItems");
+  let getDailyStoreData = dailyStore.getAll();
+  getDailyStoreData.onsuccess = function(event) {
+    let lastUpdated = new Date(event.target.result[0].requestDate);
+    let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
 
-  document.getElementById('statsNav').classList.remove('active');
-  document.getElementById('storeNav').classList.add('active');
-  document.getElementById('upcomingNav').classList.remove('active');
+    // if the data is a day or more old, and we are connected
+    if ((dayDiff >= 1) && (navigator.onLine))  {
+      loadStoreData();
+    }
+    else {
+      CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
+      displayStoreData(event.target.result);
+    }
+  }
+}
+
+function loadStoreData() {
+  const request = new XMLHttpRequest();
 
   request.open('GET', APIROOT + '/store/get', true);
   request.setRequestHeader('Authorization', FORTNITE_APIKEY);
@@ -43,8 +83,20 @@ function getStore() {
   request.onload = function() {
     if (request.status >= 200 && request.status < 400) {
       const data = JSON.parse(request.responseText);
+      const dailyStore = db.transaction(["DailyStoreItems"], "readwrite").objectStore("DailyStoreItems");
+
+      // delete the old items in the database
+      let clearDailyRequest = dailyStore.clear();
+      clearDailyRequest.onsuccess = function(event) {
+        // store the new items in the database
+        let ds = TODAY.toDateString();
+        data.items.forEach(item => {
+          item.requestDate = ds;
+          dailyStore.put(item);
+        });
+      }
       CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
-      displayStoreData(data);
+      displayStoreData(data.items);
     } else {
       console.log(request.statusText);
     }
@@ -117,9 +169,6 @@ function getUserStats(userid, platform) {
 }
 
 function displayMyStats() {
-  document.getElementById('statsNav').classList.add('active');
-  document.getElementById('storeNav').classList.remove('active');
-  document.getElementById('upcomingNav').classList.remove('active');
   
   if (localStorage.getItem('userdata')) {
     const lastUpdated = new Date(localStorage.getItem('userdata-lastupdated'));
@@ -210,12 +259,12 @@ function clearStats() {
 }
 
 function displayStoreData(data) {
-  data.items.forEach(item => {
+  data.forEach(item => {
     CONTAINER.innerHTML += `
       <div style="width:33%;float:left;">
         <img src="${item.item.images.background}" height="200">
         <h3>${item.name}</h3>
-        <p><img src="${data.vbucks}" width="20"> ${
+        <p><img src="/fortnite-vbucks-icon.png" width="20"> ${
           item.cost
         }</p>
       </div>`;
@@ -230,7 +279,46 @@ function handleFormSubmit() {
   }
 }
 
-document.getElementById('statsNav').addEventListener('click', displayMyStats);
-document.getElementById('storeNav').addEventListener('click', getStore);
-document.getElementById('upcomingNav').addEventListener('click', getStoreUpcoming);
+// Indexeddb
+let db;
+let dbRequest = window.indexedDB.open("FNdb", 1);
+
+dbRequest.onerror = function(event) {
+  alert("Database error: " + event.target.errorCode);
+};
+dbRequest.onsuccess = function(event) {
+  db = event.target.result;
+};
+dbRequest.onupgradeneeded = function(event) { 
+  const db = event.target.result;
+
+  let dailyStore = db.createObjectStore("DailyStoreItems", { keyPath : 'itemid' });
+  let upcomingStore = db.createObjectStore("UpcomingStoreItems", { keyPath : 'itemid' });
+};
+
+function handleStatsClick() {
+  document.getElementById('statsNav').classList.add('active');
+  document.getElementById('storeNav').classList.remove('active');
+  document.getElementById('upcomingNav').classList.remove('active');
+
+  displayMyStats();
+}
+function handleStoreClick() {
+  document.getElementById('statsNav').classList.remove('active');
+  document.getElementById('storeNav').classList.add('active');
+  document.getElementById('upcomingNav').classList.remove('active');
+
+  getStore();
+}
+function handleUpcomingClick() {
+  document.getElementById('statsNav').classList.remove('active');
+  document.getElementById('storeNav').classList.remove('active');
+  document.getElementById('upcomingNav').classList.add('active');
+
+  getStoreUpcoming();
+}
+
+document.getElementById('statsNav').addEventListener('click', handleStatsClick);
+document.getElementById('storeNav').addEventListener('click', handleStoreClick);
+document.getElementById('upcomingNav').addEventListener('click', handleUpcomingClick);
 displayMyStats();

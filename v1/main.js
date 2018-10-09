@@ -6,10 +6,6 @@ const TODAYSTR = TODAY.getMonth()+1 + '/' + TODAY.getDate() + '/' + TODAY.getFul
 function getStoreUpcoming() {
   const request = new XMLHttpRequest();
 
-  document.getElementById('statsNav').classList.remove('active');
-  document.getElementById('storeNav').classList.remove('active');
-  document.getElementById('upcomingNav').classList.add('active');
-
   request.open('GET', APIROOT + '/upcoming/get', true);
   request.setRequestHeader('Authorization', FORTNITE_APIKEY);
 
@@ -32,10 +28,6 @@ function getStoreUpcoming() {
 
 function getStore() {
   const request = new XMLHttpRequest();
-
-  document.getElementById('statsNav').classList.remove('active');
-  document.getElementById('storeNav').classList.add('active');
-  document.getElementById('upcomingNav').classList.remove('active');
 
   request.open('GET', APIROOT + '/store/get', true);
   request.setRequestHeader('Authorization', FORTNITE_APIKEY);
@@ -119,9 +111,6 @@ function getUserStats(userid, platform) {
 }
 
 function displayMyStats() {
-  document.getElementById('statsNav').classList.add('active');
-  document.getElementById('storeNav').classList.remove('active');
-  document.getElementById('upcomingNav').classList.remove('active');
   
   if (sessionStorage.getItem('userid') && sessionStorage.getItem('platform')) {
     getUserStats(
@@ -215,7 +204,29 @@ function handleFormSubmit() {
   }
 }
 
-document.getElementById('statsNav').addEventListener('click', displayMyStats);
-document.getElementById('storeNav').addEventListener('click', getStore);
-document.getElementById('upcomingNav').addEventListener('click', getStoreUpcoming);
+function handleStatsClick() {
+  document.getElementById('statsNav').classList.add('active');
+  document.getElementById('storeNav').classList.remove('active');
+  document.getElementById('upcomingNav').classList.remove('active');
+
+  displayMyStats();
+}
+function handleStoreClick() {
+  document.getElementById('statsNav').classList.remove('active');
+  document.getElementById('storeNav').classList.add('active');
+  document.getElementById('upcomingNav').classList.remove('active');
+
+  getStore();
+}
+function handleUpcomingClick() {
+  document.getElementById('statsNav').classList.remove('active');
+  document.getElementById('storeNav').classList.remove('active');
+  document.getElementById('upcomingNav').classList.add('active');
+
+  getStoreUpcoming();
+}
+
+document.getElementById('statsNav').addEventListener('click', handleStatsClick);
+document.getElementById('storeNav').addEventListener('click', handleStoreClick);
+document.getElementById('upcomingNav').addEventListener('click', handleUpcomingClick);
 displayMyStats();
