@@ -4,13 +4,13 @@ const TODAY = new Date();
 const TODAYSTR = TODAY.getMonth()+1 + '/' + TODAY.getDate() + '/' + TODAY.getFullYear();
 
 function getStoreUpcoming() {
-  db.items.where('type').equalsIgnoreCase('upcoming').toArray((result) => {
+  db.find({selector: {type: 'upcoming'}}).then((result)=>{
     // if it was not yet populated, load the data
-    if (result.length === 0) {
+    if (result.docs.length === 0) {
       loadUpcomingStoreData();
     }
     else {
-      let lastUpdated = new Date(result[0].requestDate);
+      let lastUpdated = new Date(result.docs[0].requestDate);
       let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
 
       // if the data is a day or more old, and we are connected
@@ -19,7 +19,7 @@ function getStoreUpcoming() {
       }
       else {
         CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
-        displayStoreData(result);
+        displayStoreData(result.docs);
       }
     }
   });
@@ -35,14 +35,21 @@ function loadUpcomingStoreData() {
       const data = JSON.parse(request.responseText);
 
       // delete the old items of this type in the database
-      db.items.where('type').equalsIgnoreCase('upcoming').delete().then(()=>{
-        // store the new items in the database
-        let ds = TODAY.toDateString();
-        data.items.forEach(item => {
-          item.requestDate = ds;
-          item.type = 'upcoming'
-          db.items.put(item);
-        });
+      db.find({selector: {type: 'upcoming'}}).then((result)=>{
+        result.docs.forEach(item => {
+          db.remove(item);
+        })
+      });
+      // store the new items in the database
+      let ds = TODAY.toDateString();
+      data.items.forEach(item => {
+        item.requestDate = ds;
+        item.type = 'upcoming'
+      });
+      db.bulkDocs(data.items).then((result)=>{
+        console.log(result);
+      }).catch((err)=>{
+        console.log(err);
       });
 
       CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
@@ -60,22 +67,21 @@ function loadUpcomingStoreData() {
 }
 
 function getStore() {
-  db.items.where('type').equalsIgnoreCase('daily').toArray((result) => {
+  db.find({selector: {type: 'daily'}}).then((result)=>{
     // if it was not yet populated, load the data
-    if (result.length === 0) {
+    if (result.docs.length === 0) {
       loadStoreData();
     }
     else {
-      let lastUpdated = new Date(result[0].requestDate);
+      let lastUpdated = new Date(result.docs[0].requestDate);
       let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
-
       // if the data is a day or more old, and we are connected
       if ((dayDiff >= 1) && (navigator.onLine))  {
         loadStoreData();
       }
       else {
         CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
-        displayStoreData(result);
+        displayStoreData(result.docs);
       }
     }
   });
@@ -92,15 +98,22 @@ function loadStoreData() {
       const data = JSON.parse(request.responseText);
 
       // delete the old items of this type in the database
-      db.items.where('type').equalsIgnoreCase('daily').delete().then(()=>{
-        // store the new items in the database
-        let ds = TODAY.toDateString();
-        data.items.forEach(item => {
-          item.requestDate = ds;
-          item.type = 'daily'
-          db.items.put(item);
-        });
-      })
+      db.find({selector: {type: 'daily'}}).then((result)=>{
+        result.docs.forEach(item => {
+          db.remove(item);
+        })
+      });
+      // store the new items in the database
+      let ds = TODAY.toDateString();
+      data.items.forEach(item => {
+        item.requestDate = ds;
+        item.type = 'daily'
+      });
+      db.bulkDocs(data.items).then((result)=>{
+        console.log(result);
+      }).catch((err)=>{
+        console.log(err);
+      });
       CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
       displayStoreData(data.items);
     } else {
@@ -285,10 +298,12 @@ function handleFormSubmit() {
   }
 }
 
-// Indexeddb
-const db = new Dexie('FNdbDexie');
-db.version(1).stores({
-  items: '&itemid, requestDate, type'
+// PouchDb
+const db = new PouchDB('FNdbPouch');
+db.createIndex({
+  index: {
+    fields: ['type']
+  }
 });
 
 function handleStatsClick() {

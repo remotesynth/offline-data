@@ -4,29 +4,41 @@ const TODAY = new Date();
 const TODAYSTR = TODAY.getMonth()+1 + '/' + TODAY.getDate() + '/' + TODAY.getFullYear();
 
 function getStoreUpcoming() {
-  db.items.where('type').equalsIgnoreCase('upcoming').toArray((result) => {
-    // if it was not yet populated, load the data
-    if (result.length === 0) {
-      loadUpcomingStoreData();
-    }
-    else {
-      let lastUpdated = new Date(result[0].requestDate);
-      let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
-
-      // if the data is a day or more old, and we are connected
-      if ((dayDiff >= 1) && (navigator.onLine))  {
+  const dataStore = Kinvey.DataStore.collection('fortniteStore', Kinvey.DataStoreType.Sync);
+  const query = new Kinvey.Query();
+  query.equalTo('type','upcoming');
+  const stream = dataStore.find(query);
+  stream.subscribe(
+    (items) => {
+      if (items.length === 0) {
         loadUpcomingStoreData();
       }
       else {
-        CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
-        displayStoreData(result);
+        let lastUpdated = new Date(items[0].requestDate);
+        let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
+
+        // if the data is a day or more old, and we are connected
+        if ((dayDiff >= 1) && (navigator.onLine))  {
+          loadUpcomingStoreData();
+        }
+        else {
+          CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
+          displayStoreData(items);
+        }
       }
+    },
+    (error) => {
+      console.log(error);
     }
-  });
+  );
 }
 
 function loadUpcomingStoreData() {
   const request = new XMLHttpRequest();
+  const dataStore = Kinvey.DataStore.collection('fortniteStore', Kinvey.DataStoreType.Sync);
+  const query = new Kinvey.Query();
+  query.equalTo('type','upcoming');
+
   request.open('GET', APIROOT + '/upcoming/get', true);
   request.setRequestHeader('Authorization', FORTNITE_APIKEY);
 
@@ -35,15 +47,19 @@ function loadUpcomingStoreData() {
       const data = JSON.parse(request.responseText);
 
       // delete the old items of this type in the database
-      db.items.where('type').equalsIgnoreCase('upcoming').delete().then(()=>{
+      dataStore.remove(query).then(()=>{
         // store the new items in the database
         let ds = TODAY.toDateString();
         data.items.forEach(item => {
           item.requestDate = ds;
           item.type = 'upcoming'
-          db.items.put(item);
+          dataStore.save(item).then(function onSuccess(entity) {
+            console.log('saved');
+          }).catch(function onError(error) {
+            console.log(error);
+          });
         });
-      });
+      })
 
       CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
       displayStoreData(data.items);
@@ -60,29 +76,40 @@ function loadUpcomingStoreData() {
 }
 
 function getStore() {
-  db.items.where('type').equalsIgnoreCase('daily').toArray((result) => {
-    // if it was not yet populated, load the data
-    if (result.length === 0) {
-      loadStoreData();
-    }
-    else {
-      let lastUpdated = new Date(result[0].requestDate);
-      let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
-
-      // if the data is a day or more old, and we are connected
-      if ((dayDiff >= 1) && (navigator.onLine))  {
+  const dataStore = Kinvey.DataStore.collection('fortniteStore', Kinvey.DataStoreType.Sync);
+  const query = new Kinvey.Query();
+  query.equalTo('type','daily');
+  const stream = dataStore.find(query);
+  stream.subscribe(
+    (items) => {
+      if (items.length === 0) {
         loadStoreData();
       }
       else {
-        CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
-        displayStoreData(result);
+        let lastUpdated = new Date(items[0].requestDate);
+        let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
+
+        // if the data is a day or more old, and we are connected
+        if ((dayDiff >= 1) && (navigator.onLine))  {
+          loadStoreData();
+        }
+        else {
+          CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
+          displayStoreData(items);
+        }
       }
+    },
+    (error) => {
+      console.log(error);
     }
-  });
+  );
 }
 
 function loadStoreData() {
   const request = new XMLHttpRequest();
+  const dataStore = Kinvey.DataStore.collection('fortniteStore', Kinvey.DataStoreType.Sync);
+  const query = new Kinvey.Query();
+  query.equalTo('type','daily');
 
   request.open('GET', APIROOT + '/store/get', true);
   request.setRequestHeader('Authorization', FORTNITE_APIKEY);
@@ -92,15 +119,20 @@ function loadStoreData() {
       const data = JSON.parse(request.responseText);
 
       // delete the old items of this type in the database
-      db.items.where('type').equalsIgnoreCase('daily').delete().then(()=>{
+      dataStore.remove(query).then(()=>{
         // store the new items in the database
         let ds = TODAY.toDateString();
         data.items.forEach(item => {
           item.requestDate = ds;
           item.type = 'daily'
-          db.items.put(item);
+          dataStore.save(item).then(function onSuccess(entity) {
+            console.log('saved');
+          }).catch(function onError(error) {
+            console.log(error);
+          });
         });
       })
+
       CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
       displayStoreData(data.items);
     } else {
@@ -285,11 +317,20 @@ function handleFormSubmit() {
   }
 }
 
-// Indexeddb
-const db = new Dexie('FNdbDexie');
-db.version(1).stores({
-  items: '&itemid, requestDate, type'
+// Kinvey
+const client = Kinvey.init({
+  appKey: 'kid_ByG-RzNqX',
+  appSecret: 'e80255b058ef48e98141431684cc491b'
 });
+// just use an anonymous user for the purposes of this demo
+const activeUser = Kinvey.User.getActiveUser(client);
+if (!activeUser) {
+  Kinvey.User.signup()
+    .catch((error) => {
+      console.log(error);
+    });
+}
+
 
 function handleStatsClick() {
   document.getElementById('statsNav').classList.add('active');
