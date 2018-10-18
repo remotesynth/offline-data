@@ -1,62 +1,58 @@
 const APIROOT = 'https://fortnite-public-api.theapinetwork.com/prod09/';
-const CONTAINER = document.getElementById('main-container');
+const CONTAINER = document.querySelector('#main-container');
 const TODAY = new Date();
 const TODAYSTR = TODAY.getMonth()+1 + '/' + TODAY.getDate() + '/' + TODAY.getFullYear();
 
 function getStoreUpcoming() {
-  const request = new XMLHttpRequest();
-
-  request.open('GET', APIROOT + '/upcoming/get', true);
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      var data = JSON.parse(request.responseText);
-      CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
-      displayStoreData(data);
-    } else {
-      console.log(request.statusText);
+  fetch(APIROOT + '/upcoming/get', {
+      headers: {
+        'Authorization':FORTNITE_APIKEY
+      }
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
     }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+    CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
+    response.json().then((data) => {
+      displayStoreData(data);
+    });
+  }).catch((error) => {
+    console.log(error);
+  });
 }
 
 function getStore() {
-  const request = new XMLHttpRequest();
-
-  request.open('GET', APIROOT + '/store/get', true);
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      const data = JSON.parse(request.responseText);
-      CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
-      displayStoreData(data);
-    } else {
-      console.log(request.statusText);
+  fetch(APIROOT + '/store/get', {
+    headers: {
+      'Authorization':FORTNITE_APIKEY
     }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
+    }
+    
+    CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
+    response.json().then((data) => {
+        displayStoreData(data);
+    });
+  }).catch((error) => {
+    console.log(error);
+  });
 }
 
 function getUser(username, platform) {
-  const request = new XMLHttpRequest();
-  request.open('GET', APIROOT + '/users/id?username=' + username, true);
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      const data = JSON.parse(request.responseText);
+  fetch(APIROOT + '/users/id?username=' + username, {
+    headers: {
+      'Authorization':FORTNITE_APIKEY
+    }
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
+    }
+    response.json().then((data) => {
       if (data.uid && data.platforms.includes(platform)) {
         sessionStorage.setItem('userid', data.uid);
         sessionStorage.setItem('username', username);
@@ -67,16 +63,8 @@ function getUser(username, platform) {
       } else {
         console.log('the user was not found');
       }
-    } else {
-      console.log(request.statusText);
-    }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+    });
+  });
 }
 
 function getUserStats(userid, platform) {
@@ -150,9 +138,7 @@ function displayForm() {
     <button id="submitForm" class="btn btn-primary mb-2">Submit</button>
     </form>
   `;
-  document
-    .getElementById('submitForm')
-    .addEventListener('click', handleFormSubmit);
+  document.querySelector('#submitForm').addEventListener('click', handleFormSubmit);
 }
 
 function displayUserData(data) {
@@ -197,36 +183,36 @@ function displayStoreData(data) {
 }
 
 function handleFormSubmit() {
-  const username = document.getElementById('usernameInput').value;
-  const platform = document.getElementById('platformSelect');
+  const username = document.querySelector('#usernameInput').value;
+  const platform = document.querySelector('#platformSelect');
   if (username) {
     getUser(username, platform[platform.selectedIndex].value);
   }
 }
 
 function handleStatsClick() {
-  document.getElementById('statsNav').classList.add('active');
-  document.getElementById('storeNav').classList.remove('active');
-  document.getElementById('upcomingNav').classList.remove('active');
+  document.querySelector('#statsNav').classList.add('active');
+  document.querySelector('#storeNav').classList.remove('active');
+  document.querySelector('#upcomingNav').classList.remove('active');
 
   displayMyStats();
 }
 function handleStoreClick() {
-  document.getElementById('statsNav').classList.remove('active');
-  document.getElementById('storeNav').classList.add('active');
-  document.getElementById('upcomingNav').classList.remove('active');
+  document.querySelector('#statsNav').classList.remove('active');
+  document.querySelector('#storeNav').classList.add('active');
+  document.querySelector('#upcomingNav').classList.remove('active');
 
   getStore();
 }
 function handleUpcomingClick() {
-  document.getElementById('statsNav').classList.remove('active');
-  document.getElementById('storeNav').classList.remove('active');
-  document.getElementById('upcomingNav').classList.add('active');
+  document.querySelector('#statsNav').classList.remove('active');
+  document.querySelector('#storeNav').classList.remove('active');
+  document.querySelector('#upcomingNav').classList.add('active');
 
   getStoreUpcoming();
 }
 
-document.getElementById('statsNav').addEventListener('click', handleStatsClick);
-document.getElementById('storeNav').addEventListener('click', handleStoreClick);
-document.getElementById('upcomingNav').addEventListener('click', handleUpcomingClick);
+document.querySelector('#statsNav').addEventListener('click', handleStatsClick);
+document.querySelector('#storeNav').addEventListener('click', handleStoreClick);
+document.querySelector('#upcomingNav').addEventListener('click', handleUpcomingClick);
 displayMyStats();

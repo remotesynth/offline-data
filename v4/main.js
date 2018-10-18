@@ -1,5 +1,5 @@
 const APIROOT = 'https://fortnite-public-api.theapinetwork.com/prod09/';
-const CONTAINER = document.getElementById('main-container');
+const CONTAINER = document.querySelector('#main-container');
 const TODAY = new Date();
 const TODAYSTR = TODAY.getMonth()+1 + '/' + TODAY.getDate() + '/' + TODAY.getFullYear();
 
@@ -228,9 +228,7 @@ function displayForm() {
     <button id="submitForm" class="btn btn-primary mb-2">Submit</button>
     </form>
   `;
-  document
-    .getElementById('submitForm')
-    .addEventListener('click', handleFormSubmit);
+  document.querySelector('#submitForm').addEventListener('click', handleFormSubmit);
 }
 
 function displayUserData(data) {
@@ -278,8 +276,8 @@ function displayStoreData(data) {
 }
 
 function handleFormSubmit() {
-  const username = document.getElementById('usernameInput').value;
-  const platform = document.getElementById('platformSelect');
+  const username = document.querySelector('#usernameInput').value;
+  const platform = document.querySelector('#platformSelect');
   if (username) {
     getUser(username, platform[platform.selectedIndex].value);
   }
@@ -292,28 +290,28 @@ db.version(1).stores({
 });
 
 function handleStatsClick() {
-  document.getElementById('statsNav').classList.add('active');
-  document.getElementById('storeNav').classList.remove('active');
-  document.getElementById('upcomingNav').classList.remove('active');
+  document.querySelector('#statsNav').classList.add('active');
+  document.querySelector('#storeNav').classList.remove('active');
+  document.querySelector('#upcomingNav').classList.remove('active');
 
   displayMyStats();
 }
 function handleStoreClick() {
-  document.getElementById('statsNav').classList.remove('active');
-  document.getElementById('storeNav').classList.add('active');
-  document.getElementById('upcomingNav').classList.remove('active');
+  document.querySelector('#statsNav').classList.remove('active');
+  document.querySelector('#storeNav').classList.add('active');
+  document.querySelector('#upcomingNav').classList.remove('active');
 
   getStore();
 }
 function handleUpcomingClick() {
-  document.getElementById('statsNav').classList.remove('active');
-  document.getElementById('storeNav').classList.remove('active');
-  document.getElementById('upcomingNav').classList.add('active');
+  document.querySelector('#statsNav').classList.remove('active');
+  document.querySelector('#storeNav').classList.remove('active');
+  document.querySelector('#upcomingNav').classList.add('active');
 
   getStoreUpcoming();
 }
 
-document.getElementById('statsNav').addEventListener('click', handleStatsClick);
-document.getElementById('storeNav').addEventListener('click', handleStoreClick);
-document.getElementById('upcomingNav').addEventListener('click', handleUpcomingClick);
+document.querySelector('#statsNav').addEventListener('click', handleStatsClick);
+document.querySelector('#storeNav').addEventListener('click', handleStoreClick);
+document.querySelector('#upcomingNav').addEventListener('click', handleUpcomingClick);
 displayMyStats();
