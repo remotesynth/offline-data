@@ -4,59 +4,55 @@ const TODAY = new Date();
 const TODAYSTR = TODAY.getMonth()+1 + '/' + TODAY.getDate() + '/' + TODAY.getFullYear();
 
 function getStoreUpcoming() {
-  const request = new XMLHttpRequest();
-
-  request.open('GET', APIROOT + '/upcoming/get', true);
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      const data = JSON.parse(request.responseText);
-      CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
-      displayStoreData(data);
-    } else {
-      console.log(request.statusText);
+  fetch(APIROOT + '/upcoming/get', {
+      headers: {
+        'Authorization':FORTNITE_APIKEY
+      }
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
     }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+    CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
+    response.json().then((data) => {
+      displayStoreData(data);
+    });
+  }).catch((error) => {
+    console.log(error);
+  });
 }
 
 function getStore() {
-  const request = new XMLHttpRequest();
-
-  request.open('GET', APIROOT + '/store/get', true);
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      const data = JSON.parse(request.responseText);
-      CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
-      displayStoreData(data);
-    } else {
-      console.log(request.statusText);
+  fetch(APIROOT + '/store/get', {
+    headers: {
+      'Authorization':FORTNITE_APIKEY
     }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
+    }
+    
+    CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
+    response.json().then((data) => {
+        displayStoreData(data);
+    });
+  }).catch((error) => {
+    console.log(error);
+  });
 }
 
 function getUser(username, platform) {
-  const request = new XMLHttpRequest();
-  request.open('GET', APIROOT + '/users/id?username=' + username, true);
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      var data = JSON.parse(request.responseText);
+  fetch(APIROOT + '/users/id?username=' + username, {
+    headers: {
+      'Authorization':FORTNITE_APIKEY
+    }
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
+    }
+    response.json().then((data) => {
       if (data.uid && data.platforms.includes(platform)) {
         localStorage.setItem('userid', data.uid);
         localStorage.setItem('username', username);
@@ -67,45 +63,33 @@ function getUser(username, platform) {
       } else {
         console.log('the user was not found');
       }
-    } else {
-      console.log(request.statusText);
-    }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+    });
+  }).catch((error) => {
+    console.log(error);
+  });
 }
 
 function getUserStats(userid, platform) {
-  const request = new XMLHttpRequest();
+  const requestUrl = APIROOT + '/users/public/br_stats?user_id=' + userid + '&platform=' + platform;
   CONTAINER.innerHTML = '<p>Loading...</p>';
-  request.open(
-    'GET',
-    APIROOT + '/users/public/br_stats?user_id=' + userid + '&platform=' + platform,
-    true
-  );
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      const data = JSON.parse(request.responseText);
-      localStorage.setItem('userdata', request.responseText);
-      localStorage.setItem('userdata-lastupdated', TODAY.toDateString())
+  fetch(requestUrl, {
+    headers: {
+      'Authorization':FORTNITE_APIKEY
+    }
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
+    }
+    response.json().then((data) => {
+      localStorage.setItem('userdata', JSON.stringify(data));
+      localStorage.setItem('userdata-lastupdated', TODAY.toDateString());
       CONTAINER.innerHTML = '';
       displayUserData(data);
-    } else {
-      console.log(request.statusText);
-    }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+    });
+  }).catch((error) => {
+    console.log(error);
+  });
 }
 
 function displayMyStats() {
