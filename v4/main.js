@@ -26,14 +26,16 @@ function getStoreUpcoming() {
 }
 
 function loadUpcomingStoreData() {
-  const request = new XMLHttpRequest();
-  request.open('GET', APIROOT + '/upcoming/get', true);
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      const data = JSON.parse(request.responseText);
-
+  fetch(APIROOT + '/upcoming/get', {
+    headers: {
+      'Authorization':FORTNITE_APIKEY
+    }
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
+    }
+    response.json().then((data) => {
       // delete the old items of this type in the database
       db.items.where('type').equalsIgnoreCase('upcoming').delete().then(()=>{
         // store the new items in the database
@@ -47,16 +49,10 @@ function loadUpcomingStoreData() {
 
       CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
       displayStoreData(data.items);
-    } else {
-      console.log(request.statusText);
-    }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+    });
+  }).catch((error) => {
+    console.log(error);
+  });
 }
 
 function getStore() {
@@ -82,15 +78,16 @@ function getStore() {
 }
 
 function loadStoreData() {
-  const request = new XMLHttpRequest();
-
-  request.open('GET', APIROOT + '/store/get', true);
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      const data = JSON.parse(request.responseText);
-
+  fetch(APIROOT + '/store/get', {
+    headers: {
+      'Authorization':FORTNITE_APIKEY
+    }
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
+    }
+    response.json().then((data) => {
       // delete the old items of this type in the database
       db.items.where('type').equalsIgnoreCase('daily').delete().then(()=>{
         // store the new items in the database
@@ -103,16 +100,10 @@ function loadStoreData() {
       })
       CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
       displayStoreData(data.items);
-    } else {
-      console.log(request.statusText);
-    }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+    });
+  }).catch((error) => {
+    console.log(error);
+  });
 }
 
 function getUser(username, platform) {
