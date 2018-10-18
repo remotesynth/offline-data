@@ -7,28 +7,36 @@ function getStoreUpcoming() {
   const upcomingStore = db.transaction(["UpcomingStoreItems"], "readwrite").objectStore("UpcomingStoreItems");
   let getUpcomingStoreData = upcomingStore.getAll();
   getUpcomingStoreData.onsuccess = function(event) {
-    let lastUpdated = new Date(event.target.result[0].requestDate);
-    let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
-
-    // if the data is a day or more old, and we are connected
-    if ((dayDiff >= 1) && (navigator.onLine))  {
+    if (event.target.result.length === 0) {
       loadUpcomingStoreData();
     }
     else {
-      CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
-      displayStoreData(event.target.result);
+      let lastUpdated = new Date(event.target.result[0].requestDate);
+      let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
+
+      // if the data is a day or more old, and we are connected
+      if ((dayDiff >= 1) && (navigator.onLine))  {
+        loadUpcomingStoreData();
+      }
+      else {
+        CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
+        displayStoreData(event.target.result);
+      }
     }
   }
 }
 
 function loadUpcomingStoreData() {
-  const request = new XMLHttpRequest();
-  request.open('GET', APIROOT + '/upcoming/get', true);
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      const data = JSON.parse(request.responseText);
+  fetch(APIROOT + '/upcoming/get', {
+    headers: {
+      'Authorization':FORTNITE_APIKEY
+    }
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
+    }
+    response.json().then((data) => {
       const upcomingStore = db.transaction(["UpcomingStoreItems"], "readwrite").objectStore("UpcomingStoreItems");
 
       // delete the old items in the database
@@ -44,45 +52,47 @@ function loadUpcomingStoreData() {
 
       CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
       displayStoreData(data.items);
-    } else {
-      console.log(request.statusText);
-    }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+    });
+  }).catch((error) => {
+    console.log(error);
+  });
 }
 
 function getStore() {
   const dailyStore = db.transaction(["DailyStoreItems"], "readwrite").objectStore("DailyStoreItems");
   let getDailyStoreData = dailyStore.getAll();
   getDailyStoreData.onsuccess = function(event) {
-    let lastUpdated = new Date(event.target.result[0].requestDate);
-    let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
-
-    // if the data is a day or more old, and we are connected
-    if ((dayDiff >= 1) && (navigator.onLine))  {
+    if (event.target.result.length === 0) {
       loadStoreData();
     }
     else {
-      CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
-      displayStoreData(event.target.result);
+      let lastUpdated = new Date(event.target.result[0].requestDate);
+      let dayDiff = Math.floor((Date.UTC(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()) - Date.UTC(lastUpdated.getFullYear(), lastUpdated.getMonth(), lastUpdated.getDate()) ) /(1000 * 60 * 60 * 24));
+
+      // if the data is a day or more old, and we are connected
+      if ((dayDiff >= 1) && (navigator.onLine))  {
+        loadStoreData();
+      }
+      else {
+        CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
+        displayStoreData(event.target.result);
+      }
     }
   }
 }
 
 function loadStoreData() {
-  const request = new XMLHttpRequest();
+  fetch(APIROOT + '/store/get', {
+    headers: {
+      'Authorization':FORTNITE_APIKEY
+    }
+  }).then((response) => {
+    if (response.status !== 200) {
+      console.log('Status Code: ' + response.status);
+      return;
+    }
 
-  request.open('GET', APIROOT + '/store/get', true);
-  request.setRequestHeader('Authorization', FORTNITE_APIKEY);
-
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      const data = JSON.parse(request.responseText);
+    response.json().then((data) => {
       const dailyStore = db.transaction(["DailyStoreItems"], "readwrite").objectStore("DailyStoreItems");
 
       // delete the old items in the database
@@ -97,16 +107,10 @@ function loadStoreData() {
       }
       CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
       displayStoreData(data.items);
-    } else {
-      console.log(request.statusText);
-    }
-  };
-
-  request.onerror = function() {
-    console.log('something went wrong');
-  };
-
-  request.send();
+    });
+  }).catch((error) => {
+    console.log(error);
+  });
 }
 
 function getUser(username, platform) {
