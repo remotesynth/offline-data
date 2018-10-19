@@ -62,10 +62,11 @@ function loadUpcomingStoreData() {
           });
         });
       });
-      dataStore.sync().then(() => {
+
+      dataStore.push().then(() => {
         console.log('synced');
       });
-      
+
       CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
       displayStoreData(data.items);
     });
@@ -133,7 +134,7 @@ function loadStoreData() {
           });
         });
       });
-      dataStore.sync().then(() => {
+      dataStore.push().then(() => {
         console.log('synced');
       });
 
