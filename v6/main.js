@@ -61,8 +61,11 @@ function loadUpcomingStoreData() {
             console.log(error);
           });
         });
-      })
-
+      });
+      dataStore.sync().then(() => {
+        console.log('synced');
+      });
+      
       CONTAINER.innerHTML = '<h3>Upcoming Items on ' + TODAYSTR + '</h3>';
       displayStoreData(data.items);
     });
@@ -129,7 +132,10 @@ function loadStoreData() {
             console.log(error);
           });
         });
-      })
+      });
+      dataStore.sync().then(() => {
+        console.log('synced');
+      });
 
       CONTAINER.innerHTML = '<h3>Store Items for ' + TODAYSTR + '</h3>';
       displayStoreData(data.items);
